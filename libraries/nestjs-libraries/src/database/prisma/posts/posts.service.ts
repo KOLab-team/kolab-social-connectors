@@ -41,6 +41,9 @@ dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 
+const MAX_SOCIAL_IMAGE_BYTES = 4 * 1024 * 1024;
+const TARGET_SOCIAL_IMAGE_BYTES = Math.floor(MAX_SOCIAL_IMAGE_BYTES * 0.92);
+
 type PostWithConditionals = Post & {
   integration?: Integration;
   childrenPost: Post[];
@@ -167,7 +170,121 @@ export class PostsService {
     return this._postRepository.getPosts(orgId, query);
   }
 
-  async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
+  private isImagePath(path: string) {
+    return !/\.(mp4|mov|webm|avi|mkv)(\?|$)/i.test(path || '');
+  }
+
+  private async uploadNormalizedImage(buffer: Buffer) {
+    return this.storage.uploadFile({
+      buffer,
+      mimetype: 'image/jpeg',
+      size: buffer.length,
+      path: '',
+      fieldname: '',
+      destination: '',
+      stream: Readable.from(buffer) as any,
+      filename: '',
+      originalname: 'image.jpg',
+      encoding: '',
+    });
+  }
+
+  private async normalizeImageForSocialUpload(
+    media: any,
+    convertToJPEG: boolean,
+    compressLargeImages: boolean
+  ) {
+    if (!this.isImagePath(media.path || media.url || '')) {
+      return media;
+    }
+
+    const shouldConvertToJpeg =
+      convertToJPEG && /\.(png|webp)(\?|$)/i.test(media.path || media.url || '');
+
+    if (!shouldConvertToJpeg && !compressLargeImages) {
+      return media;
+    }
+
+    const response = await axios.get(media.url, {
+      responseType: 'arraybuffer',
+    });
+
+    const contentType = String(
+      response.headers?.['content-type'] ||
+        response.headers?.['Content-Type'] ||
+        ''
+    ).toLowerCase();
+    if (contentType && !contentType.startsWith('image/')) {
+      return media;
+    }
+
+    const imageBuffer = Buffer.from(response.data);
+    if (
+      !shouldConvertToJpeg &&
+      imageBuffer.length <= MAX_SOCIAL_IMAGE_BYTES
+    ) {
+      return media;
+    }
+
+    const metadata = await sharp(imageBuffer).metadata();
+    const qualitySteps = shouldConvertToJpeg
+      ? [92, 86, 80, 74, 68]
+      : [88, 82, 76, 70, 64];
+    let output = imageBuffer;
+
+    for (const quality of qualitySteps) {
+      output = await sharp(imageBuffer)
+        .rotate()
+        .flatten({ background: '#ffffff' })
+        .jpeg({ quality, mozjpeg: true })
+        .toBuffer();
+
+      if (output.length <= TARGET_SOCIAL_IMAGE_BYTES) {
+        break;
+      }
+    }
+
+    let width = metadata.width || 0;
+    while (
+      output.length > TARGET_SOCIAL_IMAGE_BYTES &&
+      width > 480
+    ) {
+      width = Math.floor(width * 0.9);
+      output = await sharp(imageBuffer)
+        .rotate()
+        .resize({ width, withoutEnlargement: true })
+        .flatten({ background: '#ffffff' })
+        .jpeg({ quality: 76, mozjpeg: true })
+        .toBuffer();
+    }
+
+    const { path, originalname } = await this.uploadNormalizedImage(output);
+
+    return {
+      ...media,
+      name: originalname,
+      url:
+        path.indexOf('http') === -1
+          ? process.env.FRONTEND_URL +
+            '/' +
+            process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
+            path
+          : path,
+      type: 'image',
+      path:
+        path.indexOf('http') === -1
+          ? process.env.UPLOAD_DIRECTORY + path
+          : path,
+      size: output.length,
+    };
+  }
+
+  async updateMedia(
+    id: string,
+    imagesList: any[],
+    convertToJPEG = false,
+    compressLargeImages = false
+  ) {
     try {
       let imageUpdateNeeded = false;
       const getImageList = await Promise.all(
@@ -201,6 +318,17 @@ export class PostsService {
             };
           })
           .map(async (m) => {
+            const normalizedMedia = await this.normalizeImageForSocialUpload(
+              m,
+              convertToJPEG,
+              compressLargeImages
+            );
+
+            if (normalizedMedia.path !== m.path) {
+              imageUpdateNeeded = true;
+              return normalizedMedia;
+            }
+
             if (!convertToJPEG) {
               return m;
             }
@@ -213,23 +341,13 @@ export class PostsService {
 
               const imageBuffer = Buffer.from(response.data);
 
-              // Use sharp to get the metadata of the image
               const buffer = await sharp(imageBuffer)
                 .jpeg({ quality: 100 })
                 .toBuffer();
 
-              const { path, originalname } = await this.storage.uploadFile({
-                buffer,
-                mimetype: 'image/jpeg',
-                size: buffer.length,
-                path: '',
-                fieldname: '',
-                destination: '',
-                stream: new Readable(),
-                filename: '',
-                originalname: '',
-                encoding: '',
-              });
+              const { path, originalname } = await this.uploadNormalizedImage(
+                buffer
+              );
 
               return {
                 ...m,
@@ -459,7 +577,8 @@ export class PostsService {
             media: await this.updateMedia(
               p.id,
               JSON.parse(p.image || '[]'),
-              getIntegration?.convertToJPEG || false
+              getIntegration?.convertToJPEG || false,
+              true
             ),
           }))
         ),
