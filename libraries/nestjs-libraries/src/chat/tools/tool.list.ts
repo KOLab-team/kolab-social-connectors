@@ -6,12 +6,22 @@ import { VideoFunctionTool } from '@gitroom/nestjs-libraries/chat/tools/video.fu
 import { GenerateVideoTool } from '@gitroom/nestjs-libraries/chat/tools/generate.video.tool';
 import { GenerateImageTool } from '@gitroom/nestjs-libraries/chat/tools/generate.image.tool';
 import { IntegrationListTool } from '@gitroom/nestjs-libraries/chat/tools/integration.list.tool';
+import {
+  PostizCancelQueuedPostTool,
+  PostizGetPostTool,
+  PostizInspectMediaOrderTool,
+  PostizListPostsTool,
+} from '@gitroom/nestjs-libraries/chat/tools/postiz.admin.tools';
 
 export const toolList = [
   IntegrationListTool,
   IntegrationValidationTool,
   IntegrationTriggerTool,
   IntegrationSchedulePostTool,
+  PostizListPostsTool,
+  PostizGetPostTool,
+  PostizInspectMediaOrderTool,
+  PostizCancelQueuedPostTool,
   GenerateVideoOptionsTool,
   VideoFunctionTool,
   GenerateVideoTool,
