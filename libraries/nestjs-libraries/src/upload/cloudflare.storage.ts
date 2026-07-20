@@ -6,6 +6,10 @@ import mime from 'mime-types';
 import { getExtension } from 'mime';
 import { IUploadProvider } from './upload.interface';
 import axios from 'axios';
+import {
+  postizMediaObjectKey,
+  postizMediaPublicUrl,
+} from './postiz-media-key';
 
 class CloudflareStorage implements IUploadProvider {
   private _client: S3Client;
@@ -64,10 +68,12 @@ class CloudflareStorage implements IUploadProvider {
       loadImage?.headers?.get('Content-Type');
     const extension = getExtension(contentType)!;
     const id = makeId(10);
+    const filename = `${id}.${extension}`;
+    const key = postizMediaObjectKey(filename);
 
     const params = {
       Bucket: this._bucketName,
-      Key: `${id}.${extension}`,
+      Key: key,
       Body: Buffer.from(await loadImage.arrayBuffer()),
       ContentType: contentType,
       ChecksumMode: 'DISABLED',
@@ -76,33 +82,35 @@ class CloudflareStorage implements IUploadProvider {
     const command = new PutObjectCommand({ ...params });
     await this._client.send(command);
 
-    return `${this._uploadUrl}/${id}.${extension}`;
+    return postizMediaPublicUrl(this._uploadUrl, key);
   }
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
     try {
       const id = makeId(10);
       const extension = mime.extension(file.mimetype) || '';
+      const filename = `${id}.${extension}`;
+      const key = postizMediaObjectKey(filename);
 
       // Create the PutObjectCommand to upload the file to Cloudflare R2
       const command = new PutObjectCommand({
         Bucket: this._bucketName,
         ACL: 'public-read',
-        Key: `${id}.${extension}`,
+        Key: key,
         Body: file.buffer,
       });
 
       await this._client.send(command);
 
       return {
-        filename: `${id}.${extension}`,
+        filename,
         mimetype: file.mimetype,
         size: file.size,
         buffer: file.buffer,
-        originalname: `${id}.${extension}`,
+        originalname: filename,
         fieldname: 'file',
-        path: `${this._uploadUrl}/${id}.${extension}`,
-        destination: `${this._uploadUrl}/${id}.${extension}`,
+        path: postizMediaPublicUrl(this._uploadUrl, key),
+        destination: postizMediaPublicUrl(this._uploadUrl, key),
         encoding: '7bit',
         stream: file.buffer as any,
       };

@@ -12,21 +12,25 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import path from 'path';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import {
+  postizMediaObjectKey,
+  postizMediaPublicUrl,
+} from './postiz-media-key';
 
 const {
-  CLOUDFLARE_ACCOUNT_ID,
-  CLOUDFLARE_ACCESS_KEY,
-  CLOUDFLARE_SECRET_ACCESS_KEY,
-  CLOUDFLARE_BUCKETNAME,
-  CLOUDFLARE_BUCKET_URL,
+  PUBLIC_R2_ACCOUNT_ID,
+  PUBLIC_R2_ACCESS_KEY_ID,
+  PUBLIC_R2_SECRET_ACCESS_KEY,
+  PUBLIC_BUCKET,
+  PUBLIC_BASE_URL,
 } = process.env;
 
 const R2 = new S3Client({
   region: 'auto',
-  endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: `https://${PUBLIC_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
-    accessKeyId: CLOUDFLARE_ACCESS_KEY!,
-    secretAccessKey: CLOUDFLARE_SECRET_ACCESS_KEY!,
+    accessKeyId: PUBLIC_R2_ACCESS_KEY_ID!,
+    secretAccessKey: PUBLIC_R2_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -64,10 +68,11 @@ export async function simpleUpload(
 ) {
   const fileExtension = path.extname(originalFilename); // Extract extension
   const randomFilename = generateRandomString() + fileExtension; // Append extension
+  const key = postizMediaObjectKey(randomFilename);
 
   const params = {
-    Bucket: CLOUDFLARE_BUCKETNAME,
-    Key: randomFilename,
+    Bucket: PUBLIC_BUCKET,
+    Key: key,
     Body: data,
     ContentType: contentType,
   };
@@ -75,18 +80,19 @@ export async function simpleUpload(
   const command = new PutObjectCommand({ ...params });
   await R2.send(command);
 
-  return CLOUDFLARE_BUCKET_URL + '/' + randomFilename;
+  return postizMediaPublicUrl(PUBLIC_BASE_URL!, key);
 }
 
 export async function createMultipartUpload(req: Request, res: Response) {
   const { file, fileHash, contentType } = req.body;
   const fileExtension = path.extname(file.name); // Extract extension
   const randomFilename = generateRandomString() + fileExtension; // Append extension
+  const key = postizMediaObjectKey(randomFilename);
 
   try {
     const params = {
-      Bucket: CLOUDFLARE_BUCKETNAME,
-      Key: `${randomFilename}`,
+      Bucket: PUBLIC_BUCKET,
+      Key: key,
       ContentType: contentType,
       Metadata: {
         'x-amz-meta-file-hash': fileHash,
@@ -117,7 +123,7 @@ export async function prepareUploadParts(req: Request, res: Response) {
   for (const part of parts) {
     try {
       const params = {
-        Bucket: CLOUDFLARE_BUCKETNAME,
+        Bucket: PUBLIC_BUCKET,
         Key: partData.key,
         PartNumber: part.number,
         UploadId: partData.uploadId,
@@ -141,7 +147,7 @@ export async function listParts(req: Request, res: Response) {
 
   try {
     const params = {
-      Bucket: CLOUDFLARE_BUCKETNAME,
+      Bucket: PUBLIC_BUCKET,
       Key: key,
       UploadId: uploadId,
     };
@@ -160,23 +166,23 @@ export async function completeMultipartUpload(req: Request, res: Response) {
 
   try {
     const params = {
-      Bucket: CLOUDFLARE_BUCKETNAME,
+      Bucket: PUBLIC_BUCKET,
       Key: key,
       UploadId: uploadId,
       MultipartUpload: { Parts: parts },
     };
 
     const command = new CompleteMultipartUploadCommand({
-      Bucket: CLOUDFLARE_BUCKETNAME,
+      Bucket: PUBLIC_BUCKET,
       Key: key,
       UploadId: uploadId,
       MultipartUpload: { Parts: parts },
     });
     const response = await R2.send(command);
-    response.Location =
-      process.env.CLOUDFLARE_BUCKET_URL +
-      '/' +
-      response?.Location?.split('/').at(-1);
+    response.Location = postizMediaPublicUrl(
+      process.env.PUBLIC_BASE_URL!,
+      key
+    );
     return response;
   } catch (err) {
     console.log('Error', err);
@@ -189,7 +195,7 @@ export async function abortMultipartUpload(req: Request, res: Response) {
 
   try {
     const params = {
-      Bucket: CLOUDFLARE_BUCKETNAME,
+      Bucket: PUBLIC_BUCKET,
       Key: key,
       UploadId: uploadId,
     };
@@ -208,7 +214,7 @@ export async function signPart(req: Request, res: Response) {
   const partNumber = parseInt(req.body.partNumber);
 
   const params = {
-    Bucket: CLOUDFLARE_BUCKETNAME,
+    Bucket: PUBLIC_BUCKET,
     Key: key,
     PartNumber: partNumber,
     UploadId: uploadId,

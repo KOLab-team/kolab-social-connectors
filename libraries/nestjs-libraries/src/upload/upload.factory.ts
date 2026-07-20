@@ -11,12 +11,12 @@ export class UploadFactory {
         return new LocalStorage(process.env.UPLOAD_DIRECTORY!);
       case 'cloudflare':
         return new CloudflareStorage(
-          process.env.CLOUDFLARE_ACCOUNT_ID!,
-          process.env.CLOUDFLARE_ACCESS_KEY!,
-          process.env.CLOUDFLARE_SECRET_ACCESS_KEY!,
-          process.env.CLOUDFLARE_REGION!,
-          process.env.CLOUDFLARE_BUCKETNAME!,
-          process.env.CLOUDFLARE_BUCKET_URL!
+          process.env.PUBLIC_R2_ACCOUNT_ID!,
+          process.env.PUBLIC_R2_ACCESS_KEY_ID!,
+          process.env.PUBLIC_R2_SECRET_ACCESS_KEY!,
+          'auto',
+          process.env.PUBLIC_BUCKET!,
+          process.env.PUBLIC_BASE_URL!
         );
       default:
         throw new Error(`Invalid storage type ${storageProvider}`);

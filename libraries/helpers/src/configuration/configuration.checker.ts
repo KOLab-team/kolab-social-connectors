@@ -31,6 +31,19 @@ export class ConfigurationChecker {
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL');
     this.checkIsValidUrl('BACKEND_INTERNAL_URL');
     this.checkNonEmpty('STORAGE_PROVIDER', 'Needed to setup storage.');
+    this.checkPublicR2Storage();
+  }
+
+  checkPublicR2Storage() {
+    if (this.get('STORAGE_PROVIDER') !== 'cloudflare') {
+      return;
+    }
+
+    this.checkNonEmpty('PUBLIC_R2_ACCOUNT_ID');
+    this.checkNonEmpty('PUBLIC_R2_ACCESS_KEY_ID');
+    this.checkNonEmpty('PUBLIC_R2_SECRET_ACCESS_KEY');
+    this.checkNonEmpty('PUBLIC_BUCKET');
+    this.checkIsValidUrl('PUBLIC_BASE_URL');
   }
 
   checkNonEmpty(key: string, description?: string): boolean {
