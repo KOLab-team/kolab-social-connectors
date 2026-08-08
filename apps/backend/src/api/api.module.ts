@@ -34,6 +34,9 @@ import { AutopostController } from '@gitroom/backend/api/routes/autopost.control
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
+import { SocialInboxController } from '@gitroom/backend/api/routes/social-inbox.controller';
+import { MetaInboxWebhooksController } from '@gitroom/backend/api/routes/meta-inbox-webhooks.controller';
+import { MetaDataDeletionController } from '@gitroom/backend/api/routes/meta-data-deletion.controller';
 
 const authenticatedController = [
   UsersController,
@@ -53,6 +56,7 @@ const authenticatedController = [
   AutopostController,
   SetsController,
   ThirdPartyController,
+  SocialInboxController,
 ];
 @Module({
   imports: [UploadModule],
@@ -62,6 +66,8 @@ const authenticatedController = [
     AuthController,
     PublicController,
     MonitorController,
+    MetaInboxWebhooksController,
+    MetaDataDeletionController,
     ...authenticatedController,
   ],
   providers: [

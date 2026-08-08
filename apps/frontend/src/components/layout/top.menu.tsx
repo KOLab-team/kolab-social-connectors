@@ -60,6 +60,27 @@ export const useMenuItem = () => {
       path: '/agents',
     },
     {
+      name: t('social_inbox', 'Inbox'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M21 11.5A8.5 8.5 0 1 1 16.2 3.85M21 4v5h-5M8 10h8M8 14h5"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/inbox',
+    },
+    {
       name: t('analytics', 'Analytics'),
       icon: (
         <svg

@@ -21,6 +21,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     'pages_manage_posts',
     'pages_manage_engagement',
     'pages_read_engagement',
+    'pages_manage_metadata',
+    'pages_messaging',
     'read_insights',
   ];
   override maxConcurrentJob = 100; // Facebook has reasonable rate limits
@@ -278,6 +280,27 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         `https://graph.facebook.com/v20.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`
       )
     ).json();
+
+    const subscription = await fetch(
+      `https://graph.facebook.com/${
+        process.env.META_GRAPH_VERSION || 'v25.0'
+      }/${id}/subscribed_apps`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscribed_fields:
+            'messages,message_echoes,messaging_postbacks,messaging_optins,message_deliveries,message_reads',
+          access_token,
+        }),
+      }
+    );
+    const subscriptionBody = await subscription.json();
+    if (!subscription.ok || subscriptionBody.error) {
+      throw new Error(
+        subscriptionBody?.error?.message || 'Could not subscribe Page webhooks'
+      );
+    }
 
     return {
       id,

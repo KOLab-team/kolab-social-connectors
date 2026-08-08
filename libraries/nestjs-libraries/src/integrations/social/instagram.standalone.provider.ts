@@ -28,6 +28,7 @@ export class InstagramStandaloneProvider
     'instagram_business_basic',
     'instagram_business_content_publish',
     'instagram_business_manage_comments',
+    'instagram_business_manage_messages',
     'instagram_business_manage_insights',
   ];
   override maxConcurrentJob = 10; // Instagram standalone has stricter limits
@@ -138,6 +139,27 @@ export class InstagramStandaloneProvider
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
     ).json();
+
+    const subscription = await fetch(
+      `https://graph.instagram.com/${
+        process.env.META_GRAPH_VERSION || 'v25.0'
+      }/${user_id}/subscribed_apps`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscribed_fields: 'messages,messaging_seen',
+          access_token,
+        }),
+      }
+    );
+    const subscriptionBody = await subscription.json();
+    if (!subscription.ok || subscriptionBody.error) {
+      throw new Error(
+        subscriptionBody?.error?.message ||
+          'Could not subscribe Instagram webhooks'
+      );
+    }
 
     return {
       id: user_id,

@@ -29,8 +29,10 @@ export class InstagramProvider
     'pages_show_list',
     'pages_read_engagement',
     'business_management',
+    'pages_manage_metadata',
     'instagram_content_publish',
     'instagram_manage_comments',
+    'instagram_manage_messages',
     'instagram_manage_insights',
   ];
   override maxConcurrentJob = 10;
@@ -437,6 +439,27 @@ export class InstagramProvider
         `https://graph.facebook.com/v20.0/${data.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
       )
     ).json();
+
+    const subscription = await fetch(
+      `https://graph.facebook.com/${
+        process.env.META_GRAPH_VERSION || 'v25.0'
+      }/${id}/subscribed_apps`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscribed_fields: 'messages,messaging_seen',
+          access_token,
+        }),
+      }
+    );
+    const subscriptionBody = await subscription.json();
+    if (!subscription.ok || subscriptionBody.error) {
+      throw new Error(
+        subscriptionBody?.error?.message ||
+          'Could not subscribe Instagram webhooks'
+      );
+    }
 
     return {
       id,

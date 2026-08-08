@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "isolatedModules": true,
+    "module": "commonjs",
+    "types": ["jest", "node"]
+  },
+  "include": ["apps/**/*.ts", "libraries/**/*.ts"]
+}

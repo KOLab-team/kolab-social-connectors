@@ -496,6 +496,12 @@ export class IntegrationRepository {
         organizationId: org,
       },
       data: {
+        token: '',
+        refreshToken: null,
+        tokenExpiration: null,
+        customInstanceDetails: null,
+        refreshNeeded: true,
+        disabled: true,
         deletedAt: new Date(),
       },
     });

@@ -173,9 +173,7 @@ export function RegisterAfter({
                 <div
                   className={`absolute z-[1] justify-center items-center w-full start-0 -top-[4px] flex`}
                 >
-                  <div className="px-[16px]">
-                    or
-                  </div>
+                  <div className="px-[16px]">or</div>
                 </div>
               </div>
             )}
@@ -213,7 +211,7 @@ export function RegisterAfter({
                 )}
                 &nbsp;
                 <a
-                  href={`https://postiz.com/terms`}
+                  href="/terms"
                   className="underline hover:font-bold"
                   rel="nofollow"
                 >
@@ -222,7 +220,7 @@ export function RegisterAfter({
                 &nbsp;
                 {t('and', 'and')}&nbsp;
                 <a
-                  href={`https://postiz.com/privacy`}
+                  href="/privacy"
                   rel="nofollow"
                   className="underline hover:font-bold"
                 >

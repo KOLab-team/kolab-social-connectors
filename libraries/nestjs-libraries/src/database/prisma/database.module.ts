@@ -1,5 +1,9 @@
 import { Global, Module } from '@nestjs/common';
-import { PrismaRepository, PrismaService, PrismaTransaction } from './prisma.service';
+import {
+  PrismaRepository,
+  PrismaService,
+  PrismaTransaction,
+} from './prisma.service';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -42,6 +46,8 @@ import { ThirdPartyService } from '@gitroom/nestjs-libraries/database/prisma/thi
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { FalService } from '@gitroom/nestjs-libraries/openai/fal.service';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { SocialInboxService } from '@gitroom/nestjs-libraries/database/prisma/social-inbox/social-inbox.service';
+import { DataDeletionService } from '@gitroom/nestjs-libraries/database/prisma/data-deletion/data-deletion.service';
 
 @Global()
 @Module({
@@ -82,6 +88,8 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
     MessagesService,
     IntegrationManager,
     RefreshIntegrationService,
+    SocialInboxService,
+    DataDeletionService,
     ExtractContentService,
     OpenaiService,
     FalService,
