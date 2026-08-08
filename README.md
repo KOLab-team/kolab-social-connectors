@@ -1,3 +1,11 @@
+# KOLab Social Connectors
+
+KOLab Social Connectors is KOLab's independently deployed social publishing and messaging integration service. It is derived from [Postiz](https://github.com/gitroomhq/postiz-app), retains its AGPL-3.0 license and history, and is maintained separately so KOLab-specific connectors, inbox features, branding, privacy documentation, and platform-review work can evolve without coupling to the upstream application.
+
+Production deployments build this repository directly from source. CI verifies the source build but does not publish or deploy a prebuilt application image.
+
+---
+
 <p align="center">
   <a href="https://postiz.com/" target="_blank">
   <picture>
