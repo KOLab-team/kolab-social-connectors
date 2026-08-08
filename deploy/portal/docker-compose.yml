@@ -1,0 +1,72 @@
+name: kolab-socials
+
+services:
+  socials:
+    image: ghcr.io/kolab-team/kolab-social-connectors:latest
+    container_name: kolab-socials
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${SOCIALS_DB_USER}:${SOCIALS_DB_PASSWORD}@socials-postgres:5432/${SOCIALS_DB_NAME}
+      REDIS_URL: redis://socials-redis:6379
+      BACKEND_INTERNAL_URL: http://localhost:3000
+      IS_GENERAL: "true"
+      STORAGE_PROVIDER: local
+      UPLOAD_DIRECTORY: /uploads
+      NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY: uploads
+    volumes:
+      - socials-config:/config
+      - socials-uploads:/uploads
+    expose:
+      - "5000"
+    depends_on:
+      socials-postgres:
+        condition: service_healthy
+      socials-redis:
+        condition: service_healthy
+    networks:
+      - default
+      - portal
+    restart: unless-stopped
+
+  socials-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${SOCIALS_DB_USER}
+      POSTGRES_PASSWORD: ${SOCIALS_DB_PASSWORD}
+      POSTGRES_DB: ${SOCIALS_DB_NAME}
+    volumes:
+      - socials-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SOCIALS_DB_USER} -d ${SOCIALS_DB_NAME}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - default
+    restart: unless-stopped
+
+  socials-redis:
+    image: redis:7.2-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - socials-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - default
+    restart: unless-stopped
+
+networks:
+  portal:
+    external: true
+    name: kolab_default
+
+volumes:
+  socials-config:
+  socials-uploads:
+  socials-postgres-data:
+  socials-redis-data:
