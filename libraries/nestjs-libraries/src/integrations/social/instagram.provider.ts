@@ -31,6 +31,7 @@ export class InstagramProvider
     'business_management',
     'pages_manage_metadata',
     'instagram_content_publish',
+    'instagram_manage_contents',
     'instagram_manage_comments',
     'instagram_manage_messages',
     'instagram_manage_insights',
@@ -322,6 +323,12 @@ export class InstagramProvider
 
   async generateAuthUrl() {
     const state = makeId(6);
+    const loginConfigurationId = process.env.INSTAGRAM_FACEBOOK_LOGIN_CONFIG_ID;
+    const loginParameters = loginConfigurationId
+      ? `&config_id=${encodeURIComponent(loginConfigurationId)}` +
+        '&response_type=code'
+      : `&scope=${encodeURIComponent(this.scopes.join(','))}`;
+
     return {
       url:
         'https://www.facebook.com/v20.0/dialog/oauth' +
@@ -330,7 +337,7 @@ export class InstagramProvider
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
         `&state=${state}` +
-        `&scope=${encodeURIComponent(this.scopes.join(','))}`,
+        loginParameters,
       codeVerifier: makeId(10),
       state,
     };
