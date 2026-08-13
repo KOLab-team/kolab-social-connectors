@@ -205,6 +205,11 @@ export class DataDeletionService {
         secret: process.env.INSTAGRAM_LEGACY_APP_SECRET || '',
         providers: ['instagram-standalone'],
       },
+      {
+        name: 'THREADS',
+        secret: process.env.THREADS_APP_SECRET || '',
+        providers: ['threads'],
+      },
     ].filter((source) => source.secret);
   }
 
