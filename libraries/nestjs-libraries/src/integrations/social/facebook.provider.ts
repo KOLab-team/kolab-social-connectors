@@ -166,6 +166,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     const state = makeId(6);
+    const loginConfigurationId = process.env.FACEBOOK_LOGIN_CONFIG_ID;
+    const loginParameters = loginConfigurationId
+      ? `&config_id=${encodeURIComponent(loginConfigurationId)}` +
+        '&response_type=code'
+      : `&scope=${this.scopes.join(',')}`;
+
     return {
       url:
         'https://www.facebook.com/v20.0/dialog/oauth' +
@@ -174,7 +180,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           `${process.env.FRONTEND_URL}/integrations/social/facebook`
         )}` +
         `&state=${state}` +
-        `&scope=${this.scopes.join(',')}`,
+        loginParameters,
       codeVerifier: makeId(10),
       state,
     };
